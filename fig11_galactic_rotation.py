@@ -4,7 +4,7 @@ from scipy.special import i0, i1, k0, k1
 from scipy.optimize import curve_fit
 
 # =============================================================================
-# CODE METADATA & PHYSICS ESSENCE
+# CODE METADATA & PHYSICS ESSENCE 
 # =============================================================================
 # SCRIPT: fig11_galactic_rotation_optimization.py
 # PURPOSE: Statistical fitting of Scalar Gravity parameters to Galaxy Data.
