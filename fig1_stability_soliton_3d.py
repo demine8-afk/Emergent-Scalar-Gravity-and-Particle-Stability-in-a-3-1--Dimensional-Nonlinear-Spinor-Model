@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_bvp
 
 # =============================================================================
-# CODE METADATA & PHYSICS EXPLANATION (FOR REVIEWERS)
+# CODE METADATA & PHYSICS EXPLANATION (FOR REVIEWERS) 
 # =============================================================================
 # This script solves the radial component of the nonlinear Dirac equation (NLDE)
 # in (3+1) dimensions with Soler-type scalar self-interaction.
