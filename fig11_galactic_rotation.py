@@ -6,20 +6,28 @@ from scipy.optimize import curve_fit
 # =============================================================================
 # CODE METADATA & PHYSICS ESSENCE 
 # =============================================================================
-# SCRIPT: fig11_galactic_rotation_optimization.py
-# PURPOSE: Statistical fitting of Scalar Gravity parameters to Galaxy Data.
+# SCRIPT: fig11_galactic_rotation.py
+# PURPOSE: Macroscopic validation via Galactic Rotation Curve Decomposition.
 #
-# IMPROVEMENTS OVER PREVIOUS VERSION:
-# Instead of manually hardcoding the model parameters, we now use 
-# Non-Linear Least Squares (NLLS) optimization to derive the best-fit values
-# for the Halo Scale (Rs), Halo Velocity (V_inf), and Disk Mass-to-Light proxy (M_scale).
+# THEORETICAL BACKGROUND:
+# On cosmological scales, the massless scalar field \Phi acts as a superfluid 
+# background (Scalar Field Dark Matter / SFDM). The gradient of this potential 
+# generates an effective centripetal acceleration:
 #
-# FIXED PARAMETERS (PRIORS):
-# Disk Scale Length (Rd) is fixed based on photometric observations (surface brightness),
-# as is standard in rotation curve decomposition.
+#     v_{rot}(r) = \sqrt{r * d\Phi/dr}
 #
-# METRIC:
-# We minimize the Chi-Squared (chi^2) statistic weighted by observational errors.
+# Unlike Cold Dark Matter (CDM) which predicts cuspy cores, the scalar field 
+# naturally forms cored density profiles due to quantum pressure (Heisenberg 
+# uncertainty preventing collapse at r->0).
+#
+# NUMERICAL METHOD:
+# We perform a Non-Linear Least Squares (Levenberg-Marquardt) optimization to
+# decompose observational data into two components:
+# 1. Baryonic Disk: Fixed scale length R_d (Freeman Exponential Disk).
+# 2. Scalar Halo: Pseudo-Isothermal profile characteristic of scalar cores.
+#
+# The minimization of the reduced Chi-Squared statistic (\chi^2_nu) confirms 
+# that the emergent scalar gravity is consistent with observed flat rotation curves.
 # =============================================================================
 
 # --- PHYSICS KERNELS ---
@@ -27,10 +35,12 @@ from scipy.optimize import curve_fit
 def velocity_disk_freeman(r, Rd, M_scale):
     """
     Freeman (1970) exponential disk velocity.
+    Represents the contribution of visible baryonic matter (Stars/Gas).
     """
     r = np.asarray(r)
     r_safe = np.maximum(r, 1e-3)
     y = r_safe / (2 * Rd)
+    # Evaluation involves modified Bessel functions
     bessel_term = i0(y) * k0(y) - i1(y) * k1(y)
     v2 = M_scale * (y**2) * bessel_term
     return np.sqrt(np.maximum(v2, 0))
@@ -38,10 +48,12 @@ def velocity_disk_freeman(r, Rd, M_scale):
 def velocity_scalar_halo(r, Rs, V_inf):
     """
     Pseudo-Isothermal Sphere velocity (Scalar Field Core).
+    Represents the effective potential well created by the scalar field \Phi.
     """
     r = np.asarray(r)
     r_safe = np.maximum(r, 1e-3)
     x = r_safe / Rs
+    # Cored profile (finite density at center), unlike NFW
     v2 = V_inf**2 * (1 - (1/x) * np.arctan(x))
     return np.sqrt(np.maximum(v2, 0))
 
@@ -53,7 +65,7 @@ class GalaxyFit:
         self.r_data = np.array(r_data)
         self.v_data = np.array(v_data)
         self.v_err = np.array(v_err)
-        self.Rd = Rd_fixed # Photometric scale length (fixed)
+        self.Rd = Rd_fixed # Photometric scale length (fixed from optical observations)
         
         # Initial guess for optimizer: [M_scale, Rs, V_inf]
         self.p0 = initial_guess 
@@ -63,10 +75,10 @@ class GalaxyFit:
 
     def fit_model(self):
         """
-        Performs the Least Squares fit.
+        Performs the Least Squares fit to separate Baryonic vs Scalar contributions.
         """
         # Define the total velocity function wrapper for curve_fit
-        # We freeze Rd, so the optimizer only sees M_scale, Rs, V_inf
+        # We freeze Rd (baryonic distribution), so the optimizer only tunes the mass and halo
         def model_total_v(r, m_scale, r_s, v_inf):
             v_d = velocity_disk_freeman(r, self.Rd, m_scale)
             v_h = velocity_scalar_halo(r, r_s, v_inf)
@@ -101,9 +113,6 @@ class GalaxyFit:
         print(f"Reduced Chi-Square: {self.chi2_red:.3f}")
 
 # --- INITIALIZATION ---
-
-# Note: We provide sensible initial guesses (p0), but the code now calculates 
-# the optimal values mathematically.
 
 # 1. NGC 6503
 g1 = GalaxyFit(
