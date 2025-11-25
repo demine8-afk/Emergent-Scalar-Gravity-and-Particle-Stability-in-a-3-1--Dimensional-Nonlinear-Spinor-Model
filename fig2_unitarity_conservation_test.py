@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # scheme preserves norm exactly, up to machine precision floating-point errors.
 #
 # This test proves that any "decay" observed in binary systems (later figures)
-# is due to physical scalar radiation, NOT numerical dissipation.
+# is due to physical scalar radiation, NOT numerical dissipation. 
 # =============================================================================
 
 # --- CONFIGURATION ---
